@@ -1,0 +1,52 @@
+version: '3'
+
+services:
+  merchant-api:
+    image: tiagobm564/merchant-api
+    container_name: "merchant-api"
+    ports:
+      - "8080:8080"
+    networks:
+      - network-backend
+    depends_on:
+      - "database"
+
+  database:
+    image: postgres:12.4-alpine
+    container_name: "database"
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=pedefacil_merchant_db
+    command:
+      - "postgres"
+      - "-c"
+      - "effective_cache_size=1024MB"
+    networks:
+      - network-backend
+    volumes:
+      - ./srv/docker/postgresql:/var/lib/postgresql
+      - ./database:/docker-entrypoint-initdb.d
+
+  mockserver:
+    image: mockserver/mockserver:mockserver-5.11.0
+    container_name: "mockserver"
+    ports:
+      - 1080:1080
+    environment:
+      MOCKSERVER_PROPERTY_FILE: /config/mockserver/mockserver.properties
+      MOCKSERVER_INITIALIZATION_JSON_PATH: /config/mockserver/initializerJson.json
+    networks:
+      - network-backend
+    volumes:
+      - ./config:/config
+
+volumes:
+  data:
+    driver: local
+
+networks:
+  network-backend:
+    driver: bridge
